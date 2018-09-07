@@ -1,0 +1,39 @@
+p2p chat
+
+ip list format:
+
+- A sends number of connections
+- B sends desired amount of connections $n
+- A chooses $n clients $cs from pool
+- for $c in $cs:
+  - A sends ip version (char: 4 if ipv4, 6 if ipv6)
+  - A sends address (u128)
+  - A sends port (u16)
+- B sends 'k'
+
+publish/discovery server:
+
+- server opens port
+- client connects
+- client sends version (u16) followed by newline
+- server may drop connection now if it doesn't understand that version
+- server sends 'k'
+- until client drops connection:
+  - client sends mode (char):
+    - 'p' (give me peers):
+      - use ip list protocol where server is A and client is B; server chooses based on the least shared
+      - server stores each client with a certain TTL and a weight based on how much they've been shared out. duplicate clients get a TTL reset
+    - 'r' (register my addresses):
+      - client sends its addresses and the addresses of its peers
+      - use ip list protocol where server is B and client is A; client always sends self, but if number of peers requested is less than the total number of peers, choose the least shared ones
+  - client may now drop connection or send another mode
+
+chat server:
+
+- server opens port
+- client connects
+- server tells client what mode it's in (char):
+  - 'b' (I'm already busy with another conversation) -> server closes connection
+  - 'k' (ready to talk)
+- clients' ascii is exposed to each other
+- ^D on the keyboard causes the connection to drop
